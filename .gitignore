@@ -1,1 +1,3 @@
 venv/
+data/asl_alphabet_train
+data_landmarks/
