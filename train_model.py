@@ -43,4 +43,18 @@ y_pred = model.predict(X_test)
 
 accuracy = accuracy_score(y_test,y_pred)
 print(f"Model Accuracy {accuracy}")
-print("End of Program")
+
+# Saving the model and the Sign Map
+sign_map = {x:action for x,action in enumerate(signs)}
+
+sign_model = {
+    'model': model,
+    'sign-map':sign_map
+}
+
+#Save 'sign_model_1' to a file
+os.makedirs('models',exist_ok=True)
+with open('models/sign_modelv1.pkl','wb') as f:
+    pickle.dump(sign_model, f)
+
+print("MODEL AND LABEL MAP SAVED SUCCESSFULLY...")
