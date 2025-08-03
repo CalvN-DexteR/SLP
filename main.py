@@ -2,8 +2,8 @@ import cv2
 import mediapipe as mp
 import numpy as np
 import pickle,pyttsx3
+import threading
 
-from TTS import speak
 
 # Load the trained model 'sign_modelv1.pkl' and label map
 with open('models/sign_modelv1.pkl','rb') as f:
@@ -13,6 +13,8 @@ with open('models/sign_modelv1.pkl','rb') as f:
 
 # Initializing TTS Engine
 engine = pyttsx3.init()
+speech_rate = engine.getProperty('rate')
+engine.setProperty('rate',speech_rate-100)
 
 # Initilaize MediaPipe Hands Model
 mp_hands = mp.solutions.hands
@@ -24,7 +26,7 @@ cap = cv2.VideoCapture(0)
 
 predictions = []
 sentence = []
-threshold = 0.95
+threshold = 0.90
 
 # with mp_holistic.Holistic(min_detection_confidence=0.5,min_tracking_confidence=0.5) as holistic:
 
@@ -79,22 +81,25 @@ while cap.isOpened():   # Here webcam is known as 'cap'
             predictions.append(predicted_sign)
 
             if  np.all(np.array(predictions[-10:]) == predicted_sign) and prediction_confidence > threshold :
-                #  if len(sentence) == 0 or sentence[-1]!=predicted_sign:
+                if len(sentence) == 0 or sentence[-1]!=predicted_sign:
                       sentence.append(predicted_sign)
-                      print(f"Sign Confirment : {predicted_sign}")
-                      speak(predicted_sign)
+                      print(f"Sign Confirmed : {predicted_sign}")
+                      
+                      speaker_thread = threading.Thread(target=lambda:engine.say(predicted_sign) or engine.runAndWait(),daemon=True)
+                      speaker_thread.start()
                       predictions = []
             if len(predictions) > 20:
                  predictions = predictions[10:]
 
             else:
-                 predictions = []
+                if len(predictions) > 0:
+                     predictions.pop(0)
 
 
             if 'predicted_sign' in locals() and results.multi_hand_landmarks:
                  cv2.putText(display_image,f"{predicted_sign}({prediction_confidence : .2f})",(15,40),cv2.FONT_HERSHEY_SIMPLEX,1,(0,255,0),2,cv2.LINE_AA)
-                 cv2.putText(display_image,''.join(sentence),(15,80),cv2.FONT_HERSHEY_SIMPLEX,1,(255,255,255),2,cv2.LINE_AA)
-                 cv2.imshow("Sign Language Recognition",display_image)
+            cv2.putText(display_image,''.join(sentence),(15,80),cv2.FONT_HERSHEY_SIMPLEX,1,(255,255,255),2,cv2.LINE_AA)
+            cv2.imshow("Sign Language Recognition",display_image)
 
             # The screen will close upon pressing 'q'
             if cv2.waitKey(10) & 0xFF == ord('q'):
